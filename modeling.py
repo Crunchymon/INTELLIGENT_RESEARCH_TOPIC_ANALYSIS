@@ -5,7 +5,11 @@ from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
 
 def build_tfidf(docs):
-    vectorizer = TfidfVectorizer(max_features=3000)
+    vectorizer = TfidfVectorizer(
+        ngram_range=(1, 2),
+        min_df=2,
+        max_features=3000
+    )
     X = vectorizer.fit_transform(docs)
     return X, vectorizer
 
