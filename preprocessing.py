@@ -1,5 +1,13 @@
 import nltk
 import streamlit as st
+import ssl
+
+try:
+    _create_unverified_https_context = ssl._create_unverified_context
+except AttributeError:
+    pass
+else:
+    ssl._create_default_https_context = _create_unverified_https_context
 
 @st.cache_resource
 def download_nltk_data():

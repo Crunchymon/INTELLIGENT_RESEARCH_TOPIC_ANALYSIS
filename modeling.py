@@ -1,6 +1,6 @@
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.cluster import KMeans
-from sklearn.decomposition import LatentDirichletAllocation
+from sklearn.decomposition import LatentDirichletAllocation, TruncatedSVD
 from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
 
@@ -31,3 +31,7 @@ def topic_modeling(X, n_topics=3):
     lda = LatentDirichletAllocation(n_components=n_topics, random_state=42)
     lda.fit(X)
     return lda
+
+def reduce_dimensions(X, n_components=2):
+    svd = TruncatedSVD(n_components=n_components, random_state=42)
+    return svd.fit_transform(X)
