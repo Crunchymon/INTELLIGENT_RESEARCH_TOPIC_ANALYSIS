@@ -63,6 +63,11 @@ def show_document_modal(doc_name, doc_text, keywords, summary_sentences):
 
 st.title("📄 Document Intelligence Tool")
 
+preserve_numbers = st.toggle(
+    "Preserve Numeric Content (e.g., 2023, 5.2%)",
+    value=True
+)
+
 use_sample = st.checkbox("Use Sample Documents")
 
 uploaded_files = st.file_uploader(
@@ -109,10 +114,17 @@ elif uploaded_files:
         raw_docs.append(text)
         filenames.append(file.name)
 
-if raw_docs:
-    processed_docs = [preprocess(doc) for doc in raw_docs]
-
+@st.cache_data
+def run_pipeline(raw_docs, preserve_numbers):
+    processed_docs = [
+        preprocess(doc, preserve_numeric=preserve_numbers) 
+        for doc in raw_docs
+    ]
     X, vectorizer = build_tfidf(processed_docs)
+    return processed_docs, X, vectorizer
+
+if raw_docs:
+    processed_docs, X, vectorizer = run_pipeline(raw_docs, preserve_numbers)
 
     st.subheader("🔍 Cosine Similarity Matrix")
     if len(raw_docs) >= 2:
@@ -131,8 +143,14 @@ if raw_docs:
 
     st.subheader("📊 Clustering")
     if len(raw_docs) >= 2:
-        max_k = min(len(raw_docs), 6)
-        k = st.slider("Number of clusters", min_value=1, max_value=max_k, value=min(3, max_k))
+        suggested_k = suggest_optimal_k(X)
+        
+        k = st.slider(
+            "Number of Clusters",
+            min_value=2,
+            max_value=min(6, len(raw_docs)),
+            value=suggested_k
+        )
         
         if k > 1:
             labels = cluster_docs(X, k)
@@ -156,9 +174,26 @@ if raw_docs:
                 cluster_texts[label] += text + " "
                 
             cluster_list = [cluster_texts[i] for i in range(k)]
-            processed_clusters = [preprocess(c) for c in cluster_list]
+            
+            # Use the same toggle state for cluster summary extraction
+            processed_clusters = [preprocess(c, preserve_numeric=preserve_numbers) for c in cluster_list]
             cluster_X, cluster_vectorizer = build_tfidf(processed_clusters)
-            cluster_keywords = extract_keywords(cluster_vectorizer, cluster_X, top_n=8)
+            
+            cluster_vocab_size = len(cluster_vectorizer.get_feature_names_out())
+            dynamic_top_n = max(
+                3,                        # minimum keywords
+                min(
+                    10,                   # maximum keywords
+                    int(0.1 * cluster_vocab_size)  # 20% of cluster vocab
+                )
+            )
+
+            cluster_keywords = extract_keywords(
+                cluster_vectorizer, 
+                cluster_X, 
+                top_n=dynamic_top_n
+            )
+            
             cluster_summaries = [simple_summary(c, cluster_vectorizer, top_n=3) for c in cluster_list]
 
             st.subheader("📂 Document Clusters")

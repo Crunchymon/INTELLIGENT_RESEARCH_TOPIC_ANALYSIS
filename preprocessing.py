@@ -55,11 +55,17 @@ def clean_text(text, preserve_numeric=True):
     text = text.replace('-', ' ')
     
     if preserve_numeric:
-        # Preserve alphanumeric, spaces, decimal points and percentage symbols
-        text = re.sub(r'[^a-z0-9\s.%]', '', text)
+        # Step 1: Keep letters, digits, whitespace, dot and %
+        text = re.sub(r'[^a-z0-9\s.%]', ' ', text)
+
+        # Step 2: Remove dots not between digits (avoid stray periods)
+        text = re.sub(r'(?<!\d)\.(?!\d)', ' ', text)
+
+        # Step 3: Remove % not directly attached to a digit
+        text = re.sub(r'(?<!\d)%', ' ', text)
     else:
-        # Preserve only alphabetic and spaces
-        text = re.sub(r'[^a-z\s]', '', text)
+        # Remove all numbers and symbols
+        text = re.sub(r'[^a-z\s]', ' ', text)
         
     # Normalize whitespace
     text = re.sub(r'\s+', ' ', text).strip()

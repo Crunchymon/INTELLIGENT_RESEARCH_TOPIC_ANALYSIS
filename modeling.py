@@ -2,6 +2,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.cluster import KMeans
 from sklearn.decomposition import LatentDirichletAllocation, TruncatedSVD
 from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.metrics import silhouette_score
 import numpy as np
 
 def dynamic_max_features(docs):
@@ -42,6 +43,27 @@ def cluster_docs(X, k=3):
     model = KMeans(n_clusters=k, random_state=42)
     labels = model.fit_predict(X)
     return labels
+
+def suggest_optimal_k(X, max_k=6):
+    n_docs = X.shape[0]
+    
+    # We need at least 2 clusters and at most n_docs - 1
+    upper_bound = min(max_k, n_docs - 1)
+
+    best_k = 2
+    best_score = -1
+
+    for k in range(2, upper_bound + 1):
+        model = KMeans(n_clusters=k, random_state=42)
+        labels = model.fit_predict(X)
+
+        score = silhouette_score(X, labels)
+
+        if score > best_score:
+            best_score = score
+            best_k = k
+
+    return best_k
 
 def extract_keywords(vectorizer, X, top_n=10):
     feature_names = np.array(vectorizer.get_feature_names_out())
