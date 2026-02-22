@@ -6,7 +6,60 @@ from utils import simple_summary
 from pypdf import PdfReader
 import plotly.express as px
 import os
+import re
 
+def highlight_text(text, keywords, summary_sentences):
+    # Highlight summary sentences first (blue)
+    for sent in summary_sentences:
+        pattern = re.escape(sent.strip())
+        text = re.sub(
+            pattern,
+            f"<mark style='background-color:#90caf9; color:black'>{sent}</mark>",
+            text,
+            flags=re.IGNORECASE
+        )
+
+    # Highlight keywords (yellow)
+    for word in keywords:
+        pattern = r"\b" + re.escape(word) + r"\b"
+        text = re.sub(
+            pattern,
+            f"<span style='background-color:#ffd54f; color:black'>{word}</span>",
+            text,
+            flags=re.IGNORECASE
+        )
+
+    return text
+
+
+@st.dialog("Document View", width="large")
+def show_document_modal(doc_name, doc_text, keywords, summary_sentences):
+    st.markdown(
+        f"### {doc_name}\n\n"
+        "**Legend:** \n"
+        "<span style='background-color:#90caf9; color:black; padding: 2px 6px; border-radius: 4px; font-weight: bold;'>Summary Sentence</span> \n"
+        "&nbsp;&nbsp;\n"
+        "<span style='background-color:#ffd54f; color:black; padding: 2px 6px; border-radius: 4px; font-weight: bold;'>Keyword</span>\n"
+        "<hr style='margin-top: 10px; margin-bottom: 10px;'>", 
+        unsafe_allow_html=True
+    )
+    highlighted = highlight_text(doc_text, keywords, summary_sentences)
+    st.markdown(
+        f"""
+        <div style="
+            max-height: 500px;
+            overflow-y: auto;
+            padding: 1rem;
+            border-radius: 8px;
+            background-color: #111;
+            line-height: 1.6;
+            font-size: 16px;
+        ">
+        {highlighted}
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
 st.title("📄 Document Intelligence Tool")
 
@@ -84,7 +137,6 @@ if raw_docs:
         if k > 1:
             labels = cluster_docs(X, k)
             cluster_df = pd.DataFrame({"Document": filenames, "Cluster": labels})
-            st.write(cluster_df)
             
             coords = reduce_dimensions(X, n_components=2)
             cluster_df['PCA1'] = coords[:, 0]
@@ -98,7 +150,7 @@ if raw_docs:
             fig.update_traces(marker=dict(size=20, opacity=0.8, line=dict(width=1, color='DarkSlateGrey')))
             st.plotly_chart(fig)
             
-            st.subheader("🏷 Keywords by Cluster")
+            # Compute cluster-level features to show under cluster heading
             cluster_texts = {i: "" for i in range(k)}
             for label, text in zip(labels, raw_docs):
                 cluster_texts[label] += text + " "
@@ -106,29 +158,45 @@ if raw_docs:
             cluster_list = [cluster_texts[i] for i in range(k)]
             processed_clusters = [preprocess(c) for c in cluster_list]
             cluster_X, cluster_vectorizer = build_tfidf(processed_clusters)
-            keywords = extract_keywords(cluster_vectorizer, cluster_X)
-            
-            for i, words in enumerate(keywords):
-                st.write(f"**Cluster {i}**:", ", ".join(words))
+            cluster_keywords = extract_keywords(cluster_vectorizer, cluster_X, top_n=8)
+            cluster_summaries = [simple_summary(c, cluster_vectorizer, top_n=3) for c in cluster_list]
 
-            st.subheader("🧠 Extractive Summary by Cluster")
-            for i, text in enumerate(cluster_list):
-                summary = simple_summary(text, cluster_vectorizer, 2)
-                st.write(f"**Cluster {i} Summary:**")
-                st.write(summary)
+            st.subheader("📂 Document Clusters")
+            for cluster_id in range(k):
+                st.write(f"### Cluster {cluster_id}")
+                
+                # Show cluster-level insights
+                st.markdown(f"**Cluster Keywords:** {', '.join(cluster_keywords[cluster_id])}")
+                st.markdown(f"**Cluster Summary:** {' '.join(cluster_summaries[cluster_id])}")
+                st.markdown("---")
+                
+                cluster_docs_indices = [i for i, lbl in enumerate(labels) if lbl == cluster_id]
+                for idx in cluster_docs_indices:
+                    doc_name = filenames[idx]
+                    if st.button(doc_name, key=f"btn_cluster_{cluster_id}_{idx}"):
+                        show_document_modal(
+                            doc_name, 
+                            raw_docs[idx], 
+                            cluster_keywords[cluster_id], 
+                            cluster_summaries[cluster_id]
+                        )
         else:
             st.info("Need at least 2 clusters to perform clustering.")
+            
+            st.subheader("📂 All Documents")
+            # Fallback to computing global insights when k=1 or not clustered
+            global_keywords = extract_keywords(vectorizer, X, top_n=8)
+            global_summaries = [simple_summary(doc, vectorizer, top_n=4) for doc in raw_docs]
+            for idx, doc_name in enumerate(filenames):
+                if st.button(doc_name, key=f"btn_all_{idx}"):
+                    show_document_modal(doc_name, raw_docs[idx], global_keywords[idx], global_summaries[idx])
     else:
         st.warning("Please upload at least 2 documents to view clustering.")
-
-    if len(raw_docs) < 2 or (len(raw_docs) >= 2 and k == 1):
-        st.subheader("🏷 Keywords")
-        keywords = extract_keywords(vectorizer, X)
-        for name, words in zip(filenames, keywords):
-            st.write(f"**{name}**:", ", ".join(words))
-
-        st.subheader("🧠 Extractive Summary")
-        for name, doc in zip(filenames, raw_docs):
-            summary = simple_summary(doc, vectorizer, 2)
-            st.write(f"**{name} Summary:**")
-            st.write(summary)
+        
+        st.subheader("📂 All Documents")
+        # Fallback to computing global insights when fewer than 2 docs entirely
+        global_keywords = extract_keywords(vectorizer, X, top_n=8)
+        global_summaries = [simple_summary(doc, vectorizer, top_n=4) for doc in raw_docs]
+        for idx, doc_name in enumerate(filenames):
+            if st.button(doc_name, key=f"btn_single_{idx}"):
+                show_document_modal(doc_name, raw_docs[idx], global_keywords[idx], global_summaries[idx])

@@ -23,4 +23,4 @@ def simple_summary(text, vectorizer, top_n=3):
     
     summary = [sentences[i].strip() + "." for i in chronological_indices]
 
-    return " ".join(summary)
+    return summary

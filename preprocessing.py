@@ -78,6 +78,6 @@ def lemmatize_tokens(tokens):
 def preprocess(text, preserve_numeric=True):
     cleaned = clean_text(text, preserve_numeric)
     tokens = tokenize_text(cleaned)
-    tokens = remove_stopwords(tokens)
     tokens = lemmatize_tokens(tokens)
+    tokens = remove_stopwords(tokens)
     return " ".join(tokens)
