@@ -11,6 +11,9 @@ else:
 
 from nltk.stem import WordNetLemmatizer
 from nltk.corpus import wordnet
+import re
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
 
 @st.cache_resource
 def download_nltk_data():
@@ -22,11 +25,8 @@ def download_nltk_data():
     nltk.download('averaged_perceptron_tagger_eng', quiet=True)
     nltk.download('omw-1.4', quiet=True)
 
+# Ensure downloads happen on import
 download_nltk_data()
-
-import re
-from nltk.corpus import stopwords
-from nltk.tokenize import word_tokenize
 
 STOPWORDS = set(stopwords.words("english"))
 lemmatizer = WordNetLemmatizer()

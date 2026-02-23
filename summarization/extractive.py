@@ -1,14 +1,19 @@
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
+from nltk.tokenize import sent_tokenize
 
 def simple_summary(text, vectorizer, top_n=3):
-    # Filter empty sentences
-    sentences = [s.strip() for s in text.split(".") if len(s.strip()) > 5]
+    # Use NLTK for robust sentence splitting
+    raw_sentences = sent_tokenize(text)
+    
+    # Filter extremely short sentences
+    sentences = [s.strip() for s in raw_sentences if len(s.strip()) > 5]
     
     if not sentences:
         return ""
         
     sentence_vectors = vectorizer.transform(sentences)
+    
     sim_matrix = cosine_similarity(sentence_vectors)
     scores = sim_matrix.sum(axis=1)
 
@@ -21,6 +26,12 @@ def simple_summary(text, vectorizer, top_n=3):
     # Sort indices so the summary reads chronologically
     chronological_indices = sorted(ranked_indices)
     
-    summary = [sentences[i].strip() + "." for i in chronological_indices]
+    # Build final summary sentences, ensuring punctuation is reasonable
+    summary = []
+    for i in chronological_indices:
+        sent = sentences[i].strip()
+        if not sent.endswith(('.', '!', '?', '"', "'")):
+            sent += "."
+        summary.append(sent)
 
     return summary
