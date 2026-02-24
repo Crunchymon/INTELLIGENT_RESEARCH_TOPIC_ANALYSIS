@@ -23,11 +23,30 @@ with st.sidebar:
         sample_corpora_options = {
             "Select a Corpus...": None,
             "Demo": "optimal_demo",
-            "Limitation Demo": "semantic_limitation",
-            "Numerically Heavy Documents": "numerically_heavy_documents"
+            "Limitation Demo": "semantic_limitation"
         }
         selected_corpus = st.selectbox("Select Sample Corpus", options=list(sample_corpora_options.keys()))
         sample_corpus_name = sample_corpora_options[selected_corpus]
+        
+        if sample_corpus_name == "optimal_demo":
+            st.info(
+                "**Demo Corpus**\n\n"
+                "This corpus contains several machine learning and systems research papers "
+                "(like Attention Is All You Need, BERT, ResNet, MapReduce, GFS) along with one unrelated document "
+                "(a Cricket Rule Book).\n\n"
+                "This perfectly demonstrates how TF-IDF and K-Means can successfully cluster distinctly themed documents "
+                "into their appropriate technical domains based on terminology, isolating unrelated topics."
+            )
+        elif sample_corpus_name == "semantic_limitation":
+            st.warning(
+                "**Limitation Demo**\n\n"
+                "This corpus contains three very short documents describing the exact same event "
+                "(a customer purchasing a product online).\n\n"
+                "However, each document uses completely different vocabulary (e.g., 'customer purchased' vs. 'buyer bought' vs. 'individual acquired').\n\n"
+                "**Where our model fails:** Because TF-IDF relies entirely on exact word matches (lexical similarity) "
+                "rather than the underlying meaning of words (semantic similarity), it will fail to recognize that these three documents mean the exact same thing. "
+                "This will likely result in a low similarity score and poor clustering, demonstrating the limitations of classical TF-IDF approaches compared to modern semantic embeddings."
+            )
 
     uploaded_files = st.file_uploader(
         "Upload text or PDF files (Minimum 2 required)",
@@ -141,9 +160,11 @@ if raw_docs:
                 for idx in cluster_docs_indices:
                     doc_name = filenames[idx]
                     if st.button(doc_name, key=f"btn_cluster_{cluster_id}_{idx}"):
+                        cleaned_doc = clean_text_for_summary(raw_docs[idx], preserve_numeric=preserve_numbers)
                         show_document_modal(
                             doc_name, 
-                            raw_docs[idx], 
+                            raw_docs[idx],
+                            cleaned_doc,
                             cluster_keywords[cluster_id], 
                             cluster_summaries[cluster_id]
                         )
@@ -152,24 +173,3 @@ if raw_docs:
     else:
         st.info("Clustering requires at least 2 documents.")
         
-        # ---------------------------------------------------------
-        # Single Document Fallback
-        # ---------------------------------------------------------
-        st.subheader("📂 Document Details")
-        st.write("Keywords and Summary for the uploaded document:")
-        with st.expander("What does TF-IDF Keywords mean?"):
-             st.write("TF-IDF Keywords are the most important words in the text that distinguish it from others. They highlight the unique topics covered in the text.")
-        with st.expander("What does Extractive Summary mean?"):
-             st.write("Extractive summarization pulls the most informative full sentences directly from the text to form a concise summary of the key points.")
-             
-        global_keywords = extract_keywords(vectorizer, X, top_n=8)
-        
-        # Use custom cleaner for summarization fallback
-        cleaned_raw_docs_for_summary = [clean_text_for_summary(doc, preserve_numeric=preserve_numbers) for doc in raw_docs]
-        global_summaries = [simple_summary(doc, vectorizer, top_n=4) for doc in cleaned_raw_docs_for_summary]
-        
-        for idx, doc_name in enumerate(filenames):
-            if st.button(doc_name, key=f"btn_single_fallback_{idx}"):
-                show_document_modal(doc_name, raw_docs[idx], global_keywords[idx], global_summaries[idx])
-
-  

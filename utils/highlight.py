@@ -25,7 +25,7 @@ def highlight_text(text, keywords, summary_sentences):
     return text
 
 @st.dialog("Document View", width="large")
-def show_document_modal(doc_name, doc_text, keywords, summary_sentences):
+def show_document_modal(doc_name, raw_text, cleaned_text, keywords, summary_sentences):
     st.markdown(
         f"### {doc_name}\n\n"
         "**Legend:** \n"
@@ -35,20 +35,44 @@ def show_document_modal(doc_name, doc_text, keywords, summary_sentences):
         "<hr style='margin-top: 10px; margin-bottom: 10px;'>", 
         unsafe_allow_html=True
     )
-    highlighted = highlight_text(doc_text, keywords, summary_sentences)
-    st.markdown(
-        f"""
-        <div style="
-            max-height: 500px;
-            overflow-y: auto;
-            padding: 1rem;
-            border-radius: 8px;
-            background-color: #111;
-            line-height: 1.6;
-            font-size: 16px;
-        ">
-        {highlighted}
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
+    
+    tab1, tab2 = st.tabs(["Cleaned Text (Highlighted)", "Raw Text"])
+    
+    with tab1:
+        highlighted = highlight_text(cleaned_text, keywords, summary_sentences)
+        st.markdown(
+            f"""
+            <div style="
+                max-height: 500px;
+                overflow-y: auto;
+                padding: 1rem;
+                border-radius: 8px;
+                background-color: #111;
+                line-height: 1.6;
+                font-size: 16px;
+                white-space: pre-wrap;
+            ">
+            {highlighted}
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+        
+    with tab2:
+        st.markdown(
+            f"""
+            <div style="
+                max-height: 500px;
+                overflow-y: auto;
+                padding: 1rem;
+                border-radius: 8px;
+                background-color: #111;
+                line-height: 1.6;
+                font-size: 16px;
+                white-space: pre-wrap;
+            ">
+            {raw_text}
+            </div>
+            """,
+            unsafe_allow_html=True
+        )

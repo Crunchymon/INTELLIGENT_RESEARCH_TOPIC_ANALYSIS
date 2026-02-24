@@ -23,5 +23,14 @@ def plot_silhouette_scores(scores_dict):
         markers=True,
         title="Silhouette Score vs. Number of Clusters"
     )
-    fig.update_layout(yaxis_range=[-1.05, 1.05])
+
+    min_score = df['Silhouette Score'].min()
+    max_score = df['Silhouette Score'].max()
+
+    margin = 0.05  # small padding for readability
+
+    fig.update_yaxes(
+        range=[min_score - margin, max_score + margin]
+    )
+    # fig.update_layout(yaxis_range=[-1.05, 1.05])
     return fig
