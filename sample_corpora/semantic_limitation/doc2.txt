@@ -1,0 +1,3 @@
+A customer bought an item from an online marketplace.
+The buyer made the payment digitally and confirmed the order.
+The product was delivered to the customer.

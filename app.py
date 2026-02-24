@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import os
 
-from preprocessing.text_cleaning import preprocess
+from preprocessing.text_cleaning import preprocess, clean_text_for_summary
 from utils.file_handling import load_sample_corpus, process_uploaded_files
 from utils.highlight import show_document_modal
 from modeling import build_tfidf, cluster_docs, suggest_optimal_k, reduce_dimensions, extract_keywords, compute_similarity
@@ -13,7 +13,7 @@ st.set_page_config(page_title="Document Intelligence Tool", layout="wide")
 st.title("📄 Document Intelligence Tool")
 
 with st.sidebar:
-    preserve_numbers = st.toggle("Preserve Numeric Content (e.g., 2023, 5.2%)", value=True)
+    preserve_numbers = st.toggle("Preserve Numeric Content (e.g., 2023, 5.2%)", value=False)
     
     st.header("Data Source")
     use_sample = st.checkbox("Use Sample Documents")
@@ -22,17 +22,15 @@ with st.sidebar:
     if use_sample:
         sample_corpora_options = {
             "Select a Corpus...": None,
-            "Clean Academic Text": "clean_academic",
-            "Mixed Topic News": "mixed_topics",
-            "Noisy / Informal Text": "noisy_text",
-            "Very Short Documents": "short_documents",
+            "Demo": "optimal_demo",
+            "Limitation Demo": "semantic_limitation",
             "Numerically Heavy Documents": "numerically_heavy_documents"
         }
         selected_corpus = st.selectbox("Select Sample Corpus", options=list(sample_corpora_options.keys()))
         sample_corpus_name = sample_corpora_options[selected_corpus]
 
     uploaded_files = st.file_uploader(
-        "Upload text or PDF files",
+        "Upload text or PDF files (Minimum 2 required)",
         type=["txt", "pdf"],
         accept_multiple_files=True,
         disabled=use_sample
@@ -44,7 +42,10 @@ filenames = []
 if use_sample and sample_corpus_name:
     raw_docs, filenames = load_sample_corpus(sample_corpus_name)
 elif uploaded_files:
-    raw_docs, filenames = process_uploaded_files(uploaded_files)
+    if len(uploaded_files) < 2:
+        st.warning("Please upload at least 2 documents to proceed with analysis.")
+    else:
+        raw_docs, filenames = process_uploaded_files(uploaded_files)
 
 @st.cache_data
 def run_pipeline(docs, preserve):
@@ -124,7 +125,10 @@ if raw_docs:
             dynamic_top_n = max(3, min(10, int(0.1 * cluster_vocab_size)))
 
             cluster_keywords = extract_keywords(cluster_vectorizer, cluster_X, top_n=dynamic_top_n)
-            cluster_summaries = [simple_summary(c, cluster_vectorizer, top_n=3) for c in cluster_list]
+            
+            # Use custom cleaner for summarization
+            cleaned_clusters_for_summary = [clean_text_for_summary(c, preserve_numeric=preserve_numbers) for c in cluster_list]
+            cluster_summaries = [simple_summary(c, cluster_vectorizer, top_n=3) for c in cleaned_clusters_for_summary]
 
             st.subheader("📂 Document Clusters")
             for cluster_id in range(k):
@@ -159,21 +163,13 @@ if raw_docs:
              st.write("Extractive summarization pulls the most informative full sentences directly from the text to form a concise summary of the key points.")
              
         global_keywords = extract_keywords(vectorizer, X, top_n=8)
-        global_summaries = [simple_summary(doc, vectorizer, top_n=4) for doc in raw_docs]
+        
+        # Use custom cleaner for summarization fallback
+        cleaned_raw_docs_for_summary = [clean_text_for_summary(doc, preserve_numeric=preserve_numbers) for doc in raw_docs]
+        global_summaries = [simple_summary(doc, vectorizer, top_n=4) for doc in cleaned_raw_docs_for_summary]
         
         for idx, doc_name in enumerate(filenames):
             if st.button(doc_name, key=f"btn_single_fallback_{idx}"):
                 show_document_modal(doc_name, raw_docs[idx], global_keywords[idx], global_summaries[idx])
 
-    # if len(raw_docs) >= 2:
-    #     st.subheader("📂 All Documents")
-    #     with st.expander("What does TF-IDF Keywords mean?"):
-    #          st.write("TF-IDF Keywords are the most important words in the text that distinguish it from others. They highlight the unique topics covered in the text.")
-    #     with st.expander("What does Extractive Summary mean?"):
-    #          st.write("Extractive summarization pulls the most informative full sentences directly from the text to form a concise summary of the key points.")
-             
-    #     global_keywords = extract_keywords(vectorizer, X, top_n=8)
-    #     global_summaries = [simple_summary(doc, vectorizer, top_n=4) for doc in raw_docs]
-    #     for idx, doc_name in enumerate(filenames):
-    #         if st.button(doc_name, key=f"btn_all_{idx}"):
-    #             show_document_modal(doc_name, raw_docs[idx], global_keywords[idx], global_summaries[idx])
+  

@@ -87,3 +87,29 @@ def preprocess(text, preserve_numeric=True):
     tokens = lemmatize_tokens(tokens)
     tokens = remove_stopwords(tokens)
     return " ".join(tokens)
+
+def clean_text_for_summary(text, preserve_numeric=True):
+    # Remove URLs
+    text = re.sub(r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', '', text)
+    # Remove email addresses
+    text = re.sub(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b', '', text)
+    
+    # Rejoin words split by a hyphen at a line break
+    text = re.sub(r'-\s*\n\s*', '', text)
+    
+    if preserve_numeric:
+        # Keep letters, digits, whitespace, %, sentence boundary punctuation, and hyphens
+        text = re.sub(r'[^a-zA-Z0-9\s.%!?,\"\'-]', ' ', text)
+
+        # Remove dots that are just standalone (avoid stray periods)
+        text = re.sub(r'(?<!\d)\.(?!\d)(?!\s)', ' ', text)
+
+        # Remove % not directly attached to a digit
+        text = re.sub(r'(?<!\d)%', ' ', text)
+    else:
+        # Remove all numbers, but keep essential punctuation and hyphens
+        text = re.sub(r'[^a-zA-Z\s.!?,\"\'-]', ' ', text)
+        
+    # Normalize whitespace
+    text = re.sub(r'\s+', ' ', text).strip()
+    return text

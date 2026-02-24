@@ -1,0 +1,3 @@
+An individual acquired merchandise through an e-commerce platform.
+The purchaser finalized the acquisition via electronic payment.
+The goods were dispatched to the recipient.

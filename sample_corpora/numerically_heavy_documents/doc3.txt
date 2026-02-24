@@ -1,0 +1,5 @@
+The experiment measured a magnetic field of 3.8 Tesla at 220 volts.
+Current increased from 5.4 amperes to 9.7 amperes.
+Temperature reached 273.15 Kelvin.
+Frequency was recorded at 60.0 Hertz.
+Energy output was 12.6 kilojoules.

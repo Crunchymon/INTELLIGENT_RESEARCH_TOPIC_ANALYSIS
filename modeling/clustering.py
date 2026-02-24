@@ -28,7 +28,7 @@ def suggest_optimal_k(X, max_k=6):
             
             # Need at least 2 unique labels to compute silhouette
             if len(set(labels)) > 1:
-                score = silhouette_score(X, labels)
+                score = silhouette_score(X, labels , metric='cosine')
             else:
                 score = -1
                 

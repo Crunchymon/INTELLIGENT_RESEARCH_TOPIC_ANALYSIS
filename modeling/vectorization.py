@@ -4,6 +4,7 @@ def dynamic_max_features(docs):
     all_tokens = " ".join(docs).split()
     unique_vocab = len(set(all_tokens))
     
+
     # Keep 15% of unique vocabulary
     max_features = int(0.15 * unique_vocab)
     
@@ -14,10 +15,14 @@ def dynamic_max_features(docs):
 
 def build_tfidf(docs):
     n_docs = len(docs)
-
     min_df = max(2, int(0.1 * n_docs))
-    max_df = 0.85  # remove overly common words
+    max_df = 0.90  # remove overly common words
     max_features = dynamic_max_features(docs)
+    if(n_docs < 3):
+        min_df = 1
+        max_df = 1.0
+        max_features = None
+
 
     vectorizer = TfidfVectorizer(
         ngram_range=(1, 2),
@@ -27,5 +32,4 @@ def build_tfidf(docs):
     )
 
     X = vectorizer.fit_transform(docs)
-
     return X, vectorizer

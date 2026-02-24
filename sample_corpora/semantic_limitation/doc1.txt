@@ -1,0 +1,3 @@
+The customer purchased a product from the online store.
+The buyer completed the transaction using a credit card.
+The order was processed and shipped to the customer.
