@@ -2,6 +2,16 @@
 
 A Streamlit-based Natural Language Processing application that analyzes, compares, and clusters multiple documents (text or PDF) simultaneously. The tool allows users to uncover underlying themes across file collections using classical NLP techniques, offering deep explainability and visual introspection.
 
+## Problem Statement
+
+Given a collection of heterogeneous documents, the goal is to:
+1. Quantify pairwise similarity
+2. Automatically group documents into coherent clusters
+3. Extract representative keywords and summaries
+4. Provide interpretable visualizations
+
+The challenge lies in performing this analysis using classical NLP methods without semantic embeddings.
+
 ## Features
 
 - **Document Ingestion:** Upload multiple PDFs or text files to analyze them simultaneously.
@@ -11,6 +21,50 @@ A Streamlit-based Natural Language Processing application that analyzes, compare
 - **K-Means Clustering & Silhouette Analysis:** Groups documents automatically based on content. Recommends the optimal number of clusters using Silhouette scores, but allows for manual adjustment via a slider.
 - **Cluster Introspection:** For each cluster, the app automatically extracts characteristic **Keywords** and generates an **Extractive Summary**.
 - **Document Modal Viewer:** Click on individual documents within a cluster to view their original and cleaned contents, with keywords and summary sentences interactively highlighted.
+
+## Methodology
+
+1. Lexical Preprocessing
+   - Tokenization
+   - POS-aware Lemmatization
+   - Stopword Removal
+   - Optional Numeric Preservation
+
+2. Vector Representation
+   - TF-IDF (Unigrams + Bigrams)
+   - Dynamic Feature Scaling
+
+3. Similarity Computation
+   - Cosine Similarity (Normalized Dot Product)
+
+4. Clustering
+   - K-Means
+   - Silhouette Score for Auto-K Selection
+
+5. Cluster-Level Analysis
+   - Keyword Extraction
+   - Sentence-Level Extractive Summarization
+
+6. Visualization
+   - Similarity Heatmap
+   - PCA Projection
+   - Interactive Document Modal
+
+## Evaluation
+
+Since this is an unsupervised system, traditional accuracy metrics do not apply.
+
+We evaluate performance using:
+- Silhouette Score (cluster separation quality)
+- Intra-domain vs Inter-domain similarity margins
+- Qualitative keyword interpretability
+
+## Optimization
+
+- Implemented dynamic TF-IDF feature scaling to reduce sparsity.
+- Compared static vs dynamic vocabulary sizes.
+- Used silhouette-based automatic cluster selection.
+- Evaluated cosine vs Euclidean distance behavior in sparse space.
 
 ## Assumptions & Reasoning
 
@@ -36,3 +90,15 @@ The application ships with sample corpora to demonstrate its capabilities and co
 ### 2. Limitation Demo (`semantic_limitation`)
 *   **Contents:** Contains three extremely short texts describing the exact same event (a customer buying a product online). However, each document uses completely different vocabulary (e.g., "customer purchased" vs. "buyer bought" vs. "individual acquired").
 *   **Purpose:** Shows the critical failure point of TF-IDF. Because there is little to no overlap in the actual characters of the words, the Cosine Similarity will report near-zero similarity, proving that classical approaches cannot inherently link synonymous terms without relying on modern Semantic Embeddings.
+
+## Installation
+
+```bash
+pip install -r requirements.txt
+```
+
+## Run Locally
+
+```bash
+streamlit run app.py
+```
