@@ -51,8 +51,6 @@ def clean_text(text, preserve_numeric=True):
     # Remove email addresses
     text = re.sub(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b', '', text)
     
-    # Replace hyphens with spaces to split hyphenated words
-    text = text.replace('-', ' ')
     
     if preserve_numeric:
         # Step 1: Keep letters, digits, whitespace, dot and %
@@ -75,7 +73,7 @@ def tokenize_text(text):
     return word_tokenize(text)
 
 def remove_stopwords(tokens):
-    return [t for t in tokens if t not in STOPWORDS]
+    return [t for t in tokens if t not in STOPWORDS and len(t) > 2]
 
 def lemmatize_tokens(tokens):
     pos_tags = nltk.pos_tag(tokens)
