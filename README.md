@@ -40,7 +40,7 @@ Given a collection of heterogeneous documents:
 
 ### 📂 Document Ingestion
 - Upload multiple PDF or TXT files simultaneously
-- Built-in demo datasets included
+- Built-in demo datasets is also included
 
 ### 🧹 Intelligent Preprocessing Pipeline
 - Tokenization  
